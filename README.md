@@ -77,7 +77,8 @@ Here is a list of special treatment in this sample app to make sure frontend and
 #### Tests
 Execute the following script to run all tests:
 ```bash
-./script/local.sh ci
+./script/local.sh init # install dependencies for the frontend folder and the e2e folder
+./script/local.sh ci # run backend tests and e2e tests
 ```
 
 This script will run both backend unit tests and e2e tests.

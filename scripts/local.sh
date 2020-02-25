@@ -1,5 +1,12 @@
 #!/bin/bash
 
+init() {
+  cd frontend || exit 1
+  npm install
+  cd ../e2d || exit 1
+  npm install
+}
+
 stopFrontend() {
   if lsof -i:3000 -t &> /dev/null; then
     printf "\n======== Stopping frontend ========\n"
@@ -71,6 +78,9 @@ testE2e() {
 }
 
 case $1 in
+init)
+  init
+  ;;
 ci)
   start 'quiet'
   testBackend
@@ -92,6 +102,6 @@ cleanup)
   ./scripts/auth_server.sh cleanup
   ;;
 *)
-  echo 'Unknown command. Please specify "ci", "start", "e2e" or "stop"'
+  echo 'Unknown command. Please specify "init", "ci", "start", "e2e" or "stop"'
   ;;
 esac
