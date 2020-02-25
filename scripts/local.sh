@@ -3,7 +3,7 @@
 init() {
   cd frontend || exit 1
   npm install
-  cd ../e2d || exit 1
+  cd ../e2e || exit 1
   npm install
 }
 
@@ -49,6 +49,7 @@ startBackend() {
 }
 
 start() {
+  mkdir -p ./scripts/out
   ./scripts/auth_server.sh start
   startBackend "$1"
   startFrontend "$1"
@@ -88,7 +89,6 @@ ci)
   stop
   ;;
 start)
-  mkdir -p ./scripts/out
   start
   ;;
 e2e)
