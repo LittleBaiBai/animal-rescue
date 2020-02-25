@@ -20,5 +20,7 @@ jobs:
       uses: actions/setup-java@v1.3.0
       with:
         java-version: 12
+    - run: ls -al
+    - run: pwd
     - run: ./script/local.sh init
     - run: ./script/local.sh ci
