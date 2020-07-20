@@ -30,10 +30,10 @@ jobs:
     - name: Figure this out
       env:
         GITHUB_BRANCH: ${{ github.ref }}
-        GITHUB_IS_MAIN: ${{ github.ref == 'ref/head/master' }}
+        GITHUB_IS_MAIN: ${{ github.ref == 'ref/heads/master' }}
         JOB_STATUS: ${{ job.status }}
         JOB_SUCCESS: ${{ job.status == 'success' }}
-        CONDITION: ${{ job.status && github.ref == 'ref/head/master' }}
+        CONDITION: ${{ job.status && github.ref == 'ref/heads/master' }}
       run: |
         echo "branch: $GITHUB_BRANCH"
         echo "is main branch: $GITHUB_IS_MAIN"
