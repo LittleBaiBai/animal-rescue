@@ -12,20 +12,20 @@ jobs:
         java: [ 8, 11.0.x, 12, 13 ]
     steps:
     - uses: actions/checkout@v2
-    - name: Setup Node
-      uses: actions/setup-node@v1
-      with:
-        node-version: 12.x
-    - name: Setup Java JDK
-      uses: actions/setup-java@v1.3.0
-      with:
-        java-version: 12
-
-    - run: ls -al ./scripts/local.sh
-    - name: Install dependencies
-      run: ./scripts/local.sh init
-    - name: Run tests
-      run: ./scripts/local.sh ci
+#    - name: Setup Node
+#      uses: actions/setup-node@v1
+#      with:
+#        node-version: 12.x
+#    - name: Setup Java JDK
+#      uses: actions/setup-java@v1.3.0
+#      with:
+#        java-version: 12
+#
+#    - run: ls -al ./scripts/local.sh
+#    - name: Install dependencies
+#      run: ./scripts/local.sh init
+#    - name: Run tests
+#      run: ./scripts/local.sh ci
 
     - name: Figure this out
       env:
@@ -33,10 +33,20 @@ jobs:
         GITHUB_IS_MAIN: ${{ github.ref == 'ref/heads/master' }}
         JOB_STATUS: ${{ job.status }}
         JOB_SUCCESS: ${{ job.status == 'success' }}
-        CONDITION: ${{ job.status && github.ref == 'ref/heads/master' }}
+        CONDITION: ${{ job.status == 'success' && github.ref == 'ref/heads/master' }}
       run: |
         echo "branch: $GITHUB_BRANCH"
         echo "is main branch: $GITHUB_IS_MAIN"
         echo "status: $JOB_STATUS"
         echo "success: $JOB_SUCCESS"
         echo "condition: $CONDITION"
+
+    - name: Conditional step
+      if: ${{ job.status == 'success' && github.ref == 'ref/heads/master' }}
+      run: |
+        echo "hey"
+
+    - name: Conditional step 2
+      if: ${{ success() && github.ref == 'ref/heads/master' }}
+      run: |
+        echo "hey ha"
