@@ -26,3 +26,17 @@ jobs:
       run: ./scripts/local.sh init
     - name: Run tests
       run: ./scripts/local.sh ci
+
+    - name: Figure this out
+      env:
+        GITHUB_BRANCH: ${{ github.ref }}
+        GITHUB_IS_MAIN: ${{ github.ref == 'ref/head/master' }}
+        JOB_STATUS: ${{ job.status }}
+        JOB_SUCCESS: ${{ job.status == 'success' }}
+        CONDITION: ${{ job.status && github.ref == 'ref/head/master' }}
+      run: |
+        echo "branch: $GITHUB_BRANCH"
+        echo "is main branch: $GITHUB_IS_MAIN"
+        echo "status: $JOB_STATUS"
+        echo "success: $JOB_SUCCESS"
+        echo "condition: $CONDITION"
