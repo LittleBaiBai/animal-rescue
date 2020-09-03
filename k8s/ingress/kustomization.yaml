@@ -3,18 +3,18 @@ kind: Kustomization
 namespace: animal-rescue
 
 # TODO: uncomment for basic auth + ingress
-secretGenerator:
-- name: ingress-basic-auth
-  type: Opaque
-  files:
-  - secret/auth
-
-generatorOptions:
-  disableNameSuffixHash: true
+#secretGenerator:
+#- name: ingress-basic-auth
+#  type: Opaque
+#  files:
+#  - secret/auth
+#
+#generatorOptions:
+#  disableNameSuffixHash: true
 
 resources:
-  - animal-rescue-ingress.yaml
+#  - animal-rescue-ingress.yaml
   - letsencrypt-staging.yaml
   # TODO: Comment animal-rescue-ingress.yaml and uncomment below for OAuth2 section
-  #- animal-rescue-external-ingress.yaml
-  #- animal-rescue-internal-ingress.yaml
+  - animal-rescue-external-ingress.yaml
+  - animal-rescue-internal-ingress.yaml
