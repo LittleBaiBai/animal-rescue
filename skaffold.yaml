@@ -1,0 +1,71 @@
+apiVersion: skaffold/v2beta6
+kind: Config
+build:
+  tagPolicy:
+    sha256: {}
+  artifacts:
+  - image: springcloudservices/animal-rescue-k8s
+    context: backend
+    buildpacks:
+      builder: gcr.io/paketo-buildpacks/builder:base-platform-api-latest
+      dependencies:
+        paths:
+        - src
+        - build.gradle
+  - image: springcloudservices/animal-rescue-partner
+    context: external-api
+    buildpacks:
+      builder: gcr.io/paketo-buildpacks/builder:base-platform-api-latest
+      dependencies:
+        paths:
+        - .
+        ignore:
+        - node_modules
+deploy:
+  kustomize:
+    paths:
+    - backend/k8s/
+    - external-api/k8s/
+#    - k8s
+#  helm:
+#    flags:
+#      install: [ "--create-namespace" ]
+#    releases:
+#      - name: ingress-s1p
+#        chartPath: ingress-nginx/ingress-nginx
+#        remote: true
+#        namespace: nginx
+#        wait: true
+#
+#      - name: external-dns
+#        chartPath: bitnami/external-dns
+#        valuesFiles: [ k8s/external-dns/external-dns-helm-values.yaml ]
+#        remote: true
+#        namespace: external-dns
+#        wait: true
+#
+#      - name: cert-manager
+#        chartPath: jetstack/cert-manager
+#        version: v1.0.0
+#        setValues:
+#          installCRDs: true
+#        remote: true
+#        namespace: cert-manager
+#        wait: true
+#
+#      - name: autocert
+#        chartPath: smallstep/autocert
+#        remote: true
+#        namespace: autocert
+
+#      - name: oauth2-proxy-internal
+#        chartPath: stable/oauth2-proxy
+#        valuesFiles: [k8s/oauth2-proxy/internal-oauth2-proxy-helm-values.yaml]
+#        remote: true
+#        namespace: oauth2-proxy
+#
+#      - name: oauth2-proxy-external
+#        chartPath: stable/oauth2-proxy
+#        valuesFiles: [k8s/oauth2-proxy/external-oauth2-proxy-helm-values.yaml]
+#        remote: true
+#        namespace: oauth2-proxy

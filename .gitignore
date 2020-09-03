@@ -7,3 +7,4 @@
 *.ipr
 out/
 scripts/out/
+**/secret/

@@ -1,126 +1,351 @@
 # Animal Rescue ♥️😺 ♥️🐶 ♥️🐰 ♥️🐦 ♥️🐹
-![Test All](https://github.com/spring-cloud-services-samples/animal-rescue/workflows/Test%20All/badge.svg?branch=master)
 
-Sample app for Tanzu Spring Cloud Gateway tile. 
-Features we demonstrate with this sample app:
-- Routing traffic to configured internal routes with container-to-container network
-- Gateway routes configured through service bindings
-- Simplified route configuration
-- SSO login and token relay on behalf of the routed services
-- Required scopes on routes (tag: `require-sso-scopes`)
+The sample repo for "Bullet-proof Microservices with Spring & Kubernetes" by [Bella Bai](https://github.com/LittleBaiBai) and [Oliver Hughes](https://github.com/ojhughes).
 
-## Deploy to CF
+You can also checkout tag `startdemo` the following steps as we were going through in our talk.
 
-Run the following scripts to set up everything:
+Or you can check out the corresponding tag to get the code for different stages:
+
+- `startdemo`: starting point
+- `basicauth`: TLS + Ingress + Basic Auth
+- `oauth2`: TLS + Ingress + OAuth2 
+- `mTLS`: mTLS
+
+Please open an issue/PR if any of the tags or steps are inaccurate.
+
+Have fun rescuing!
+
+## Requirements
+* A Kubernetes cluster. Ideally running in a cloud environment (such as Google Kubernetes Engine or VMware TKGi) as the examples require internet facing DNS records.
+* kubectl CLI
+* helm CLI
+    * Add the following repos following the steps:
+        ```bash
+        helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx  # for nginx ingress
+        helm repo add stable https://kubernetes-charts.storage.googleapis.com   # for oauth2-proxy
+        helm repo add jetstack https://charts.jetstack.io                       # for cert-manager
+        helm repo add bitnami https://charts.bitnami.com/bitnami                # for external-dns
+        helm repo add smallstep https://smallstep.github.io/helm-charts/        # for autocert
+        ```
+* skaffold CLI
+* A top level domain name to use (our examples use the domain spring.animalrescue.online, you will need to change this to your own)
+* You need to create an NS record for a subdomain of your top level domain. Our examples use an NS record pointing to Google Cloud DNS servers. You can use [any DNS provider in this list](https://github.com/kubernetes-sigs/external-dns#the-latest-release-v07)
+* Do a global find and replace in the `k8s` folder: `s/spring.animalrescue.online/yourdomain.com/g`
+* Before the deployment, build the frontend artifact:
+
+    ```bash
+    cd frontend
+    npm install
+    npm run build
+    ```
+* GCP service account secret for using ExternalDNS. See [this section](#externaldns) You can manually create DNS entry and remove ExternalDNS from [skaffold](skaffold.yaml) and [kustomization](k8s/kustomization.yaml)
+* OAuth2 application with GitHub or your favorite provider. See [this section](#securing-http-with-oauth2-proxy-with-github)
+* OAuth2 application with an OIDC provider. See [this section](#setting-up-internal-oauth-with-an-oidc-provider)
+* The guide assume you have `skaffold dev` running to apply changes. You can also run `skaffold run` with each step.
+
+## Basic Auth on API
+
+### Manual basic auth
+
+1. Create secret
+
+    ```bash
+    kubectl create secret generic animal-rescue-basic --from-literal=username=alice  --from-literal=password=test
+    ```
+
+1. Use the secret in the container, use `basic` profile
+
+    ```bash
+    env:
+      - name: SPRING_PROFILES_ACTIVE
+        value: basic
+      - name: ANIMAL_RESCUE_SECURITY_BASIC_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: animal-rescue-basic
+            key: password
+      - name: ANIMAL_RESCUE_SECURITY_BASIC_USERNAME
+        valueFrom:
+          secretKeyRef:
+            name: animal-rescue-basic
+            key: username
+    ```
+
+1. Deploy and verify basic auth working with the app, and partner app shows 401
+1. Add basic auth configuration to external API deployment
+
+    ```yaml
+              - name: ANIMAL_RESCUE_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: animal-rescue-basic
+                    key: password
+              - name: ANIMAL_RESCUE_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: animal-rescue-basic
+                    key: username
+    ```
+
+1. Edit server.js to use basic auth from secret
+
+    ```js
+    const response = await axios.get(`${animalRescueBaseUrl}/api/animals`, {
+        auth: {
+            username: animalRescueUsername,
+            password: animalRescuePassword
+        }
+    });
+    ```
+
+1. Partner API use the same secret to access `/api/animals` endpoint
+1. Change the secret and rolling restart
+
+### Ingress + Basic Auth
+
+1. Start fresh from the beginning.
+1. Uncomment the ingress release in `deploy/helm/releases` section in [skaffold.yaml](./skaffold.yaml)
+1. Create secret
+   
+    Generate `auth` file using the following command:
+    
+    ```bash
+    mkdir k8s/ingress/secret
+    cd k8s/ingress/secret
+    htpasswd -c auth alice # Password is MD5 encrypted by default
+    ```
+    
+    Create secret with `secretGenerator` in [ingress kustomization](./k8s/ingress/kustomization.yaml):
+    
+    ```yaml
+    secretGenerator:
+    - name: ingress-basic-auth
+      type: Opaque
+      files:
+      - secret/auth
+    
+    generatorOptions:
+      disableNameSuffixHash: true
+    ```
+
+1. Add basic auth annotation to [animal-rescue-ingress yaml](./k8s/ingress/animal-rescue-ingress.yaml)
+
+    ```yaml
+      annotations:
+        # type of authentication
+        nginx.ingress.kubernetes.io/auth-type: basic
+        # name of the secret that contains the user/password definitions
+        nginx.ingress.kubernetes.io/auth-secret: ingress-basic-auth
+    ```
+
+1. Uncomment `- k8s/` from `deploy.kustomize.paths` section in [skaffold.yaml](./skaffold.yaml) to include the ingress yaml
+1. You need DNS records `[spring.yourdomain | partner.spring.yourdomain | auth-external.yourdomain]` and assign them to the ingress IP address. If you don't want to do it manually, you can use [ExternalDNS](#ExternalDNS) to generate DNS entry.
+
+_Note for uninstall: you may need to fun the following command after `helm uninstall`_
+
 ```bash
-./scripts/cf_deploy init    # installs dependencies and builds the deployment artifact
-./scripts/cf_deploy deploy  # handles everything you need to deploy the frontend, backend, and gateway. This script can be executed repeatedly to deploy new changes.
+kubectl delete -A ValidatingWebhookConfiguration ingress-s1p-ingress-nginx-admission
 ```
-Then visit the the frontend url `https://gateway-demo.${appsDomain}/rescue` to view the sample app.
 
-Once you have enough fun with the sample app, run the following script to clean up the environment:
+_Note for running on GKE: I had to run the following command to enable webhook:_
+
 ```bash
-./scripts/cf_deploy destroy # tears down everything
+kubectl create clusterrolebinding cluster-admin-binding \
+  --clusterrole cluster-admin \
+  --user $(gcloud config get-value account)
 ```
 
-Some other commands that might be helpful:
+### ExternalDNS
+
+[Helm install](https://github.com/bitnami/charts/tree/master/bitnami/external-dns)
+
+[Example helm values](https://github.com/paulczar/platform-operations-on-kubernetes/blob/master/charts/externaldns/helmfile/base.yaml.gotmpl)
+
+1. Set up a hosted DNS with the provider of your choice. We use Google DNS. More info in [this section](#google-dns-setup)
+1. Pull down the service account json with `gcloud` cli :
+    ```bash
+    gcloud iam service-accounts keys create ./k8s/external-dns/secret/gcp-dns-account-credentials.json --iam-account=$CLOUD_DNS_SA
+    ```
+1. Update [helm values](./k8s/external-dns/external-dns-helm-values.yaml) for your DNS provider. ExternalDNS has more information on integration with different providers in their[doc](https://github.com/kubernetes-sigs/external-dns)
+1. Uncomment `resources[external-dns]` in [k8s/kustomization.yaml](./k8s/kustomization.yaml)
+1. Uncomment the ingress release in `deploy/helm/releases` section in [skaffold.yaml](./skaffold.yaml)
+
+Watch on DNS zone changes: 
+
 ```bash
-./scripts/cf_deploy push                     # builds and pushes frontend and backend
-./scripts/cf_deploy dynamic_route_config_update  # update bound apps' configuration with calling the update endpoint on the backing app. You will need to be a space developer to do so.
-./scripts/cf_deploy rebind                   # unbinds and rebinds frontend and backend
-./scripts/cf_deploy upgrade                  # upgrade the gateway instance
+watch gcloud dns record-sets list --zone animal-rescue-zone 
 ```
 
-All the gateway configuration can be found and updated here:
+Tail logs with [stern](https://github.com/wercker/stern):
 
-- Gateway service instance configuration file used on create/update: `./gateway-config.json` 
-- Frontend routes configuration used on binding used on bind: `./frontend/gateway-config.json`
-- Backend routes configuration used on binding used on bind:`./backend/gateway-config.json` 
-
-## Special frontend config related to gateway
-
-The frontend application is implemented in ReactJS, and is pushed with static buildpack. Because of it's static nature, we had to do the following 
-1. `homepage` in `package.json` is set to `/rescue`, which is the path we set for the frontend application in gateway config (`frontend/gateway-config.json`). This is to make sure all related assets is requested under `/rescue` path as well.
-1. `Sign in to adopt` button is linked to `/rescue/login`, which is a path that is `sso-enabled` in gateway config (`frontend/gateway-config.json`). This is necessary for frontend apps bound to a sub path on gateway because the Oauth2 login flow redirects users to the original requested location or back to `/` if no saved request exists. This setting is not necessary if the frontend app is bound to path `/`.
-1. `REACT_APP_BACKEND_BASE_URI` is set to `/backend` in build script, which is the path we set for the backend application in gateway config (`backend/gateway-config.json`). This is to make sure all our backend API calls are appended with the `backend` path.
-
-
-## Try it out
-Visit `https://gateway-demo.${appsDomain}/rescue`, you should see cute animal bios with the `Adopt` buttons disabled. All the information are fetched from a public `GET` backend endpoint `/animals`. 
-![homepage](./docs/images/homepage.png)
-
-Click the `Sign in to adopt` button on the top right corner, you should be redirected to the SSO login page if you haven't already logged in to SSO.
-![log in page](./docs/images/login.png)
-
-Once you logged in, you should see a greeting message regarding the username you log in with on the top right corner, and the `Adopt` buttons should be enabled.
-![logged in view](./docs/images/logged-in.png)
-
-Click on the `Adopt` button, input your contact email and application notes in the model, then click `Apply`, a `POST` request should be sent to a `sso-enabled` backend endpoint `/animals/{id}/adoption-requests`, with the adopter set to your username we parsed from your token.
-![adopt model](./docs/images/adopt.png)   
-
-Then the model should close, and you should see the `Adopt` button you clicked just now has turned into `Edit Adoption Request`. This is matched by your SSO log in username.
-![adopted view](./docs/images/adopted.png)   
-
-Click on the `Edit Adoption Request` again, you can view, edit (`PUT`), and delete (`DELETE`) the existing request.
-![view or edit existing adoption request model](./docs/images/edit-or-delete.png)   
-
-**Note**
-Documentation may get out of date. Please refer to the [e2e test](./e2e/cypress/integration/) and the test output video for the most accurate user flow description.
-
-## Development
-
-#### Run locally 
-Use the following commands to manage the local lifecycle of animal-rescue
 ```bash
-./scripts/local.sh start         # start auth server, frontend app, and backend app
-./scripts/local.sh start --quiet # start everything without launching the app in browser, and redirects all output to `./scripts/out/`
-./scripts/local.sh stop          # stop auth server, frontend app, and backend app. You would only need to do this if you start the app in quiet mode.
-``` 
+stern external -n external-dns
+```
 
-#### Local security configuration
-Backend uses Form login for local development with two test accounts - `alice / test` and `bob / test`. 
-Note that in a real deployment with Gateway, OAuth2 login will be managed by the gateway itself, and your app should use `TokenRelay` filter to receive OpenID ID Token in `Authorization` header. See `CloudFoundrySecurityConfiguration` class for an example of Spring Security 5 configuration to handle token relay correctly.
+The record will take a few minute to propogate. Keep pinging...
 
-> It is also possible to use OAuth2 login flow for the app. This requires running an authorization server locally. See `local-oauth2-flow` for an example of using Cloud Foundry User Account and Authentication (UAA) running in a Docker container locally.
+### TLS
 
-#### Tests
-Execute the following script to run all tests:
+1. Uncomment the cert-manager release in `deploy/helm/releases` section in [skaffold.yaml](./skaffold.yaml)
+1. Include `letsencrypt-staging.yaml` in [ingress kustomization](./k8s/ingress/kustomization.yaml)
+1. Update [ingress](./k8s/ingress/animal-rescue-ingress.yaml), uncomment code following the `TODO`s
+    ```yaml
+    annotations:
+     # In addition to existing auth annotations
+     cert-manager.io/cluster-issuer: "letsencrypt"
+     kubernetes.io/tls-acme: "true" # This annotation tells ingress to exclude that acme challenge path from authentication.
+    
+    # Add TLS enforcement
+    spec:
+     tls:
+       - hosts:
+           - spring.animalrescue.online
+         secretName: animal-rescue-certs
+       - hosts:
+           - partner.spring.animalrescue.online
+         secretName: partner-certs
+    ```
+
+Check ingress gets certificate related events:
+
 ```bash
-./scripts/local.sh init          # install dependencies for the frontend folder and the e2e folder
-./scripts/local.sh ci            # run backend tests and e2e tests
-./scripts/local.sh backend       # run backend test only
-./scripts/local.sh e2e --quiet   # run e2e test only without interactive mode
+kubectl describe ingress animal-rescue-ingress
 ```
 
-You can find an e2e test output video showing the whole journey in `./e2e/cypress/videos/` after the test run. 
-If you would like to launch the test in an actual browser and run e2e test interactively, you may run the following commands:
+Check certificate status:
+
 ```bash
-./scripts/local.sh start
-./scripts/local.sh e2e
-``` 
-More detail about the e2e testing framework can be found at [cypress api doc](https://docs.cypress.io/api/api/table-of-contents.html) 
+kubectl get certificates
+```
 
-## CI
+Verify TLS:
 
-#### GitHub Actions
-GitHub Actions run all checks for the `master` branch and all PR requests. All workflow configuration can be found in `.github/workflows`.
-
-#### Concourse
-If you'd like to get the most updated sample app deployed in a real TAS environment, you can set up a concourse pipeline to do so:
 ```bash
-fly -t ${yourConcourseTeamName} set-pipeline -p sample-app-to-demo-environment -c concourse/pipeline.yml -l config.yml
-```
-You will need to update the slack notification settings and add the following environment variables to your concourse credentials manager. Here are the variables we set in our concourse credhub:
-```
-- name: /concourse/main/sample-app-to-demo-environment/CF_API_HOST
-- name: /concourse/main/sample-app-to-demo-environment/CF_USERNAME
-- name: /concourse/main/sample-app-to-demo-environment/CF_PASSWORD
-- name: /concourse/main/sample-app-to-demo-environment/SKIP_SSL_VALIDATION
-- name: /concourse/main/sample-app-to-demo-environment/CF_ORG
-- name: /concourse/main/sample-app-to-demo-environment/CF_SPACE
+curl http://spring.animalrescue.online/api/animals # Should get `308 Permanent Redirect` back
+curl https://spring.animalrescue.online/api/animals -k # Should get `401` back
+curl https://spring.animalrescue.online/api/animals -k --user alice:test # Should get `200`response back
 ```
 
-## Check out our tags:
-Tags that looks like `SCG-VT-v${VERSION}+` indicates that this commit and the commits after are compatible with the specified `VERSION` of the `SCG-VT` tile.
+After verified that everything works fine, switch to use prod server.
 
-The other tags demonstrate different configuration with `SCG-VT`, have fun exploring what's possible!
+- Add [letsencrypt-prod.yaml](./k8s/ingress/letsencrypt-prod.yaml) to [kustomization](./k8s/ingress/kustomization.yaml)
+- Use the prod issuer in ingress
+- Update the secret names in the TLS section so cert manager can create new ones.
+
+Visit the site again to see a trusted cert!
+
+### OAuth2
+
+#### Securing HTTP with oauth2-proxy with GitHub
+
+1. Create an OAuth application in the GitHub website (or another OAuth provider such as google if you prefer but you will need to change the settings in `k8s/oauth2-proxy/external-oauth2-proxy-helm-values.yaml`) 
+   See the [GitHub guide for setting up an OAuth application](https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/)
+1. When creating the OAuth App in GitHub, make sure the Authorization Callback URL points at your own domain eg: https://auth-external.spring.animalrescue.online/oauth2/callback
+1. Create the directory `k8s/oauth2-proxy/secret` (it is git ignored)
+1. Create the file `k8s/oauth2-proxy/secret/oauth2-external-proxy-creds`, using the structure below;
+
+    ```properties
+    cookie-secret=<<random value>>
+    client-id=<<Your client ID from the GitHub OAuth application page>>
+    client-secret=<<Your client secret from the GitHub OAuth application page>>
+    ```
+1. In the Helm values file `k8s/oauth2-proxy/external-oauth2-proxy-helm-values.yaml` change the email under `restricted_access:` to the email of your GitHub account
+
+#### Setting up internal OAuth with an OIDC provider
+
+The idea of this section is that you may want to protect internal resources using a different auth backend.
+
+In our example we are using [TKGi Kubernetes](https://docs.pivotal.io/tkgi/1-8/index.html) and its' internal UAA OAuth2 provider.
+You will need to modify the configuration in `k8s/oauth2-proxy/internal-oauth2-proxy-helm-values.yaml` and
+change `oidc-issuer-url` to point at your own service. The create an OAuth Client and add the client id and secret to the file 
+`k8s/oauth2-proxy/secret/oauth2-internal-proxy-creds`.
+
+Then accessing 
+
+#### Install both oauth2-proxy and use them with ingress
+
+1. Include `oauth2-proxy` in [k8s/kustomization](k8s/kustomization.yaml) 
+1. Include oauth2 ingresses in [ingress/kustomization](k8s/ingress/kustomization.yaml)
+1. Uncomment the 2 `oauth2-proxy` releases in `deploy/helm/releases` section in [skaffold.yaml](./skaffold.yaml)
+1. Open a browser to `yourdomain.com` and you should be presented with a GitHub authorization page and redirected to the animal-rescue site
+1. Accessing any actuator endpoint `yourdomain.com/actuator/*` and you should be redirected to your choice of internal auth provider for authentication then redirected to the actuator endpoint.
+
+### mTLS with Autocert
+
+[Doc](https://github.com/smallstep/autocert)
+
+1. Uncomment the `autocert` release in `deploy/helm/releases` section in [skaffold.yaml](./skaffold.yaml)
+1. Label the namespace to enable autocert:
+    
+    ```bash
+    kubectl label namespace animal-rescue autocert.step.sm=enabled
+    ```
+    
+    Or Add the following metadata to [namespace.yaml](external-api/k8s/namespace.yaml)
+    
+    ```yaml
+    metadata:
+      # Additional to existing metadata
+      labels:
+        autocert.step.sm: enabled
+    ``` 
+   
+1. Annotate the node app
+    
+   ```yaml   
+    spec:
+      template:
+        metadata:
+          # Additional to existing metadata
+          annotations:
+            autocert.step.sm/name: partner-adoption-center.animal-rescue.svc.cluster.local
+    ```
+ 
+1. Check certs on container:
+
+    ```bash
+    set PARTNER_POD (kubectl get pods -l app=partner-adoption-center -o jsonpath='{$.items[0].metadata.name}')
+    kubectl exec -it $PARTNER_POD -c partner-adoption-center -- ls /var/run/autocert.step.sm
+    # Should see root.crt  site.crt  site.key
+    kubectl exec -it $PARTNER_POD -c partner-adoption-center -- cat /var/run/autocert.step.sm/site.crt | step certificate inspect --short -
+    # We can see the subject is what we set in the annotation, and the cert is valid for a day. Then the sidecar will take care of the renewal
+    ```
+ 
+1. Update the node app to be mTLS enabled. You can compare the file with the branch `mtls` to get the code that works, or follow this [code example](https://github.com/smallstep/autocert/blob/master/examples/hello-mtls/node/server.js) to come up with your own.
+1. Update [service](external-api/k8s/service.yaml) port from `80` to `443`
+1. Deploy a CURL mTLS client:
+
+    ```bash
+    kubectl apply -f ./external-api/k8s/curl-mtls-client.yaml
+    ```
+
+    Or add it through kustomization.
+    
+1. Verify it work by checking the logs:
+
+    ```bash
+    stern curl-mtls-client
+    ```
+ 
+    Or do the curl manually: 
+    
+    ```bash
+    set MTLS_CLIENT (kubectl get pods -l app=curl-mtls-client -o jsonpath='{$.items[0].metadata.name}')
+    
+    k exec -it $MTLS_CLIENT -- curl -sS \
+           --cacert /var/run/autocert.step.sm/root.crt \
+           --cert /var/run/autocert.step.sm/site.crt \
+           --key /var/run/autocert.step.sm/site.key \
+           https://partner-adoption-center.animal-rescue.svc.cluster.local
+    # Should return 200 with response
+    
+    kubectl exec -it $MTLS_CLIENT -- curl https://partner-adoption-center.animal-rescue.svc.cluster.local
+    # Should fail on server cert validation
+   
+    kubectl exec -it $MTLS_CLIENT -- curl https://partner-adoption-center.animal-rescue.svc.cluster.local -k
+    # Should fail on client cert validation
+    ```
+
+### Google DNS setup 
+The kNative project has a good guide for setting up external DNS with Google Cloud that you can follow in order to get a K8s cluster up and running 
+[https://knative.dev/v0.15-docs/serving/using-external-dns-on-gcp/#set-up-kubernetes-engine-cluster-with-clouddns-readwrite-permissions]()

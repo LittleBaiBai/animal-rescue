@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: animal-rescue
+  labels:
+    app: animal-rescue
+spec:
+  selector:
+    matchLabels:
+      app: animal-rescue
+  replicas: 1
+  template:
+    metadata:
+      name: animal-rescue
+      labels:
+        app: animal-rescue
+    spec:
+      containers:
+      - name: animal-rescue
+        image: springcloudservices/animal-rescue-k8s
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 8080
+        livenessProbe:
+          httpGet:
+            port: 8080
+            path: /actuator/health/liveness
+        readinessProbe:
+          httpGet:
+            port: 8080
+            path: /actuator/health/readiness
+        lifecycle:
+          preStop:
+            exec:
+              command: ["sh", "-c", "sleep 10"]
+        volumeMounts:
+          - name: application-config-volume
+            mountPath: /config/rescue/
+        env:
+          - name: SPRING_CONFIG_LOCATION
+            value: /config/rescue/application.yaml
+#          # TODO: Add the following envs for making request with manual basic auth
+#          - name: SPRING_PROFILES_ACTIVE
+#            value: basic
+#          - name: ANIMAL_RESCUE_SECURITY_BASIC_PASSWORD
+#            valueFrom:
+#              secretKeyRef:
+#                name: animal-rescue-basic
+#                key: password
+#          - name: ANIMAL_RESCUE_SECURITY_BASIC_USERNAME
+#            valueFrom:
+#              secretKeyRef:
+#                name: animal-rescue-basic
+#                key: username
+      volumes:
+        - name: "application-config-volume"
+          configMap:
+            name: "application-configmap"
+      restartPolicy: Always
+

@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    # type of authentication
+    # name of the secret that contains the user/password definitions
+    nginx.ingress.kubernetes.io/auth-url: "https://auth-internal.spring.animalrescue.online/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-signin: "https://auth-internal.spring.animalrescue.online/oauth2/start?rd=https%3A%2F%2Fspring.animalrescue.online/actuat"
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+    kubernetes.io/tls-acme: "true"
+  name: animal-rescue-internal-ingress
+spec:
+  rules:
+    - host: actuator.spring.animalrescue.online
+      http:
+        paths:
+        - path: "/actuator"
+          backend:
+            serviceName: animal-rescue
+            servicePort: 9000
+  tls:
+  - hosts:
+    - actuator.spring.animalrescue.online
+    secretName: animal-rescue-certs

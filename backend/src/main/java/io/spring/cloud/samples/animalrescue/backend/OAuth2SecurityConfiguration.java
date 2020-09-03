@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnCloudPlatfo
 import org.springframework.boot.cloud.CloudPlatform;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -21,29 +22,10 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 import io.pivotal.cfenv.core.CfEnv;
 
 @Configuration
-@ConditionalOnCloudPlatform(CloudPlatform.CLOUD_FOUNDRY)
-public class CloudFoundrySecurityConfiguration {
+@Profile("oauth2")
+public class OAuth2SecurityConfiguration {
 
-	private static final Logger LOG = LoggerFactory.getLogger(CloudFoundrySecurityConfiguration.class);
-
-	@Bean
-	CfEnv cfEnv() {
-		return new CfEnv();
-	}
-
-	@Bean
-	public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity httpSecurity, CfEnv cfEnv) {
-		String authDomain = cfEnv.findCredentialsByLabel("p.gateway").getString("auth_domain");
-		if (authDomain != null) {
-			LOG.info("Found SSO auth_domain {}, configuring Resource Server support", authDomain);
-			httpSecurity.oauth2ResourceServer()
-			            .jwt()
-			            .jwkSetUri(authDomain + "/token_keys")
-						.jwtAuthenticationConverter(new ReactiveJwtAuthenticationConverterAdapter(new UserNameJwtAuthenticationConverter()));
-		}
-
-		return httpSecurity.build();
-	}
+	private static final Logger LOG = LoggerFactory.getLogger(OAuth2SecurityConfiguration.class);
 
 	static private class UserNameJwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 

@@ -1,9 +1,9 @@
 HELP.md
 .gradle
 build/
+src/main/resources/static/**
+
 !gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**
-!**/src/test/**
 
 ### STS ###
 .apt_generated
@@ -30,3 +30,7 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Secrets
+secret.env
+secret.yaml

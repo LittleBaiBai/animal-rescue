@@ -1,0 +1,22 @@
+# Sources specify the types of kubernetes resources we are watching for. In our example, we only expose services through ingress, so we can remove `service` from our sources.
+sources:
+  - service
+  - ingress
+
+# Domain filters tells external DNS to filter on your hosted DNS zones with matching domain. This is more like `zoneFilters`.
+domainFilters:
+  - spring.animalrescue.online
+
+provider: google
+
+google:
+  project: cf-spring-scs
+
+  # Service account secret is what external dns uses to manage our DNS zone. Let's add a secret generator to create the secret.
+  serviceAccountSecret: cloud-dns-admin
+
+  # When creating a secret with a file, the filename becomes the key and the content of the file becomes the value. This tells external-dns where to retrieve the value.
+  serviceAccountSecretKey: gcp-dns-account-credentials.json
+
+# Alternatively, `sync` is a great option if you are 100% sure that the external-dns would be the only manager of the zone. It handles the removal of the DNS records if the corresponding k8s resources are removed.
+policy: upsert-only

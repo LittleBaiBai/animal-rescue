@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: curl-mtls-client, labels: {app: curl-mtls-client}}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: curl-mtls-client}}
+  template:
+    metadata:
+      annotations:
+        autocert.step.sm/name: curl-mtls-client.animal-rescue.pod.cluster.local
+      labels: {app: curl-mtls-client}
+    spec:
+      containers:
+      - name: curl-mtls-client
+        image: smallstep/hello-mtls-client-curl:latest
+        env:
+        - name: HELLO_MTLS_URL
+          value: https://partner-adoption-center.animal-rescue.svc.cluster.local

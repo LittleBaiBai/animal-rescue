@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: partner-adoption-center
+  labels:
+    app: partner-adoption-center
+spec:
+  selector:
+    matchLabels:
+      app: partner-adoption-center
+  replicas: 1
+  template:
+    metadata:
+      name: partner-adoption-center
+      labels:
+        app: partner-adoption-center
+    spec:
+      containers:
+      - name: partner-adoption-center
+        image: springcloudservices/animal-rescue-partner
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 5000
+        resources: {requests: {cpu: 10m, memory: 20Mi}}
+        env:
+          - name: ANIMAL_RESCUE_BASE_URL
+            value: http://animal-rescue.animal-rescue.svc.cluster.local
+#          # TODO: Add the following envs for making request with manual basic auth
+#          - name: ANIMAL_RESCUE_PASSWORD
+#            valueFrom:
+#              secretKeyRef:
+#                name: animal-rescue-basic
+#                key: password
+#          - name: ANIMAL_RESCUE_USERNAME
+#            valueFrom:
+#              secretKeyRef:
+#                name: animal-rescue-basic
+#                key: username
+

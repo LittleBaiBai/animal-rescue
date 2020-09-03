@@ -1,13 +1,6 @@
 name: Test All
 
-on:
-  workflow_dispatch: {}
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+on: [push]
 
 jobs:
   backend-test:
