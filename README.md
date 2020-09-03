@@ -115,7 +115,7 @@ Have fun rescuing!
     htpasswd -c auth alice # Password is MD5 encrypted by default
     ```
     
-    Create secret with `secretGenerator` in [ingress kustomization](./k8s/ingress/kustomization.yaml):
+    Create secret with `secretGenerator` in [ingress kustomization](./k8s/ingress/kustomization.yaml) (uncomment):
     
     ```yaml
     secretGenerator:
@@ -128,7 +128,7 @@ Have fun rescuing!
       disableNameSuffixHash: true
     ```
 
-1. Add basic auth annotation to [animal-rescue-ingress yaml](./k8s/ingress/animal-rescue-ingress.yaml)
+1. Add basic auth annotation to [animal-rescue-ingress yaml](./k8s/ingress/animal-rescue-ingress.yaml) (uncomment)
 
     ```yaml
       annotations:
@@ -169,6 +169,7 @@ kubectl create clusterrolebinding cluster-admin-binding \
 1. Update [helm values](./k8s/external-dns/external-dns-helm-values.yaml) for your DNS provider. ExternalDNS has more information on integration with different providers in their[doc](https://github.com/kubernetes-sigs/external-dns)
 1. Uncomment `resources[external-dns]` in [k8s/kustomization.yaml](./k8s/kustomization.yaml)
 1. Uncomment the ingress release in `deploy/helm/releases` section in [skaffold.yaml](./skaffold.yaml)
+1. Add new ingress rule with new domain if you don't already have the DNS records for listed domains
 
 Watch on DNS zone changes: 
 
