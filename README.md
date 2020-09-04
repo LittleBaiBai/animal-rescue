@@ -300,7 +300,7 @@ Then accessing
           annotations:
             autocert.step.sm/name: partner-adoption-center.animal-rescue.svc.cluster.local
     ```
- 
+
 1. Check certs on container:
 
     ```bash

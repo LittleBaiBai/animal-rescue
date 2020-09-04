@@ -27,10 +27,10 @@ deploy:
     - backend/k8s/
     - external-api/k8s/
 #    - k8s
-#  helm:
-#    flags:
-#      install: [ "--create-namespace" ]
-#    releases:
+  helm:
+    flags:
+      install: [ "--create-namespace" ]
+    releases:
 #      - name: ingress-s1p
 #        chartPath: ingress-nginx/ingress-nginx
 #        remote: true
@@ -53,10 +53,10 @@ deploy:
 #        namespace: cert-manager
 #        wait: true
 #
-#      - name: autocert
-#        chartPath: smallstep/autocert
-#        remote: true
-#        namespace: autocert
+      - name: autocert
+        chartPath: smallstep/autocert
+        remote: true
+        namespace: autocert
 
 #      - name: oauth2-proxy-internal
 #        chartPath: stable/oauth2-proxy

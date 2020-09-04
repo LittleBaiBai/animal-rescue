@@ -6,6 +6,6 @@ spec:
   selector:
     app: partner-adoption-center
   ports:
-  - port: 80
+  - port: 443
     targetPort: 5000
   type: LoadBalancer

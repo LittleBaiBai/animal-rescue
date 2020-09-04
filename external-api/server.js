@@ -1,4 +1,6 @@
-const http = require('http');
+const https = require('https');
+const tls = require('tls');
+const fs = require('fs');
 const axios = require('axios');
 
 const animalRescueBaseUrl = process.env.ANIMAL_RESCUE_BASE_URL;
@@ -22,7 +24,41 @@ const requestAnimalsFromAnimalRescue = async () => {
     }
 };
 
-const server = http.createServer(async (req, res) => {
+const config = {
+    ca: '/var/run/autocert.step.sm/root.crt',
+    key: '/var/run/autocert.step.sm/site.key',
+    cert: '/var/run/autocert.step.sm/site.crt',
+    ciphers: 'ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256',
+    minVersion: 'TLSv1.2',
+    maxVersion: 'TLSv1.2'
+};
+
+const createSecureContext = () => {
+    return tls.createSecureContext({
+        ca: fs.readFileSync(config.ca),
+        key: fs.readFileSync(config.key),
+        cert: fs.readFileSync(config.cert),
+        ciphers: config.ciphers,
+    });
+};
+
+let ctx = createSecureContext();
+
+fs.watch(config.cert, (event, filename) => {
+    if (event === 'change') {
+        ctx = createSecureContext();
+    }
+});
+
+const serverOptions = {
+    requestCert: true,
+    rejectUnauthorized: true,
+    SNICallback: (servername, cb) => {
+        cb(null, ctx);
+    }
+};
+
+const server = https.createServer(serverOptions, async (req, res) => {
     if (req.url === '/') {
         res.writeHead(200, {'Content-Type': 'text/html'});
 

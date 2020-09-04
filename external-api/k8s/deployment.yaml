@@ -12,6 +12,8 @@ spec:
   template:
     metadata:
       name: partner-adoption-center
+      annotations:
+        autocert.step.sm/name: partner-adoption-center.animal-rescue.svc.cluster.local
       labels:
         app: partner-adoption-center
     spec:
