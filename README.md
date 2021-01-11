@@ -34,9 +34,7 @@ Have fun rescuing!
 * Before the deployment, build the frontend artifact:
 
     ```bash
-    cd frontend
-    npm install
-    npm run build
+    ./gradlew :frontend:assemble
     ```
 * GCP service account secret for using ExternalDNS. See [this section](#externaldns) You can manually create DNS entry and remove ExternalDNS from [skaffold](skaffold.yaml) and [kustomization](k8s/kustomization.yaml)
 * OAuth2 application with GitHub or your favorite provider. See [this section](#securing-http-with-oauth2-proxy-with-github)
@@ -122,7 +120,7 @@ Have fun rescuing!
     - name: ingress-basic-auth
       type: Opaque
       files:
-      - secret/auth
+      - secrets/auth
     
     generatorOptions:
       disableNameSuffixHash: true
@@ -164,9 +162,9 @@ kubectl create clusterrolebinding cluster-admin-binding \
 1. Set up a hosted DNS with the provider of your choice. We use Google DNS. More info in [this section](#google-dns-setup)
 1. Pull down the service account json with `gcloud` cli :
     ```bash
-    gcloud iam service-accounts keys create ./k8s/external-dns/secret/gcp-dns-account-credentials.json --iam-account=$CLOUD_DNS_SA
+    gcloud iam service-accounts keys create ./k8s/external-dns/secrets/gcp-dns-account-credentials.json --iam-account=$CLOUD_DNS_SA
     ```
-1. Update [helm values](./k8s/external-dns/external-dns-helm-values.yaml) for your DNS provider. ExternalDNS has more information on integration with different providers in their[doc](https://github.com/kubernetes-sigs/external-dns)
+1. Update [helm values](k8s/external-dns/external-dns-helm-values.yaml) for your DNS provider. ExternalDNS has more information on integration with different providers in their[doc](https://github.com/kubernetes-sigs/external-dns)
 1. Uncomment `resources[external-dns]` in [k8s/kustomization.yaml](./k8s/kustomization.yaml)
 1. Uncomment the ingress release in `deploy/helm/releases` section in [skaffold.yaml](./skaffold.yaml)
 1. Add new ingress rule with new domain if you don't already have the DNS records for listed domains
@@ -242,8 +240,8 @@ Visit the site again to see a trusted cert!
 1. Create an OAuth application in the GitHub website (or another OAuth provider such as google if you prefer but you will need to change the settings in `k8s/oauth2-proxy/external-oauth2-proxy-helm-values.yaml`) 
    See the [GitHub guide for setting up an OAuth application](https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/)
 1. When creating the OAuth App in GitHub, make sure the Authorization Callback URL points at your own domain eg: https://auth-external.spring.animalrescue.online/oauth2/callback
-1. Create the directory `k8s/oauth2-proxy/secret` (it is git ignored)
-1. Create the file `k8s/oauth2-proxy/secret/oauth2-external-proxy-creds`, using the structure below;
+1. Create the directory `k8s/oauth2-proxy/secrets` (it is git ignored)
+1. Create the file `k8s/oauth2-proxy/secrets/oauth2-external-proxy-creds`, using the structure below;
 
     ```properties
     cookie-secret=<<random value>>
@@ -259,7 +257,7 @@ The idea of this section is that you may want to protect internal resources usin
 In our example we are using [TKGi Kubernetes](https://docs.pivotal.io/tkgi/1-8/index.html) and its' internal UAA OAuth2 provider.
 You will need to modify the configuration in `k8s/oauth2-proxy/internal-oauth2-proxy-helm-values.yaml` and
 change `oidc-issuer-url` to point at your own service. The create an OAuth Client and add the client id and secret to the file 
-`k8s/oauth2-proxy/secret/oauth2-internal-proxy-creds`.
+`k8s/oauth2-proxy/secrets/oauth2-internal-proxy-creds`.
 
 Then accessing 
 

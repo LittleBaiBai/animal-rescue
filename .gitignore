@@ -1,4 +1,5 @@
 .DS_Store
+.gradle
 
 ### IntelliJ IDEA ###
 .idea
@@ -7,4 +8,4 @@
 *.ipr
 out/
 scripts/out/
-**/secret/
+**/secrets/

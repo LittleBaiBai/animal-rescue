@@ -7,7 +7,7 @@ build:
   - image: springcloudservices/animal-rescue-k8s
     context: backend
     buildpacks:
-      builder: gcr.io/paketo-buildpacks/builder:base-platform-api-latest
+      builder: gcr.io/paketo-buildpacks/builder:base
       dependencies:
         paths:
         - src
@@ -58,14 +58,14 @@ deploy:
 #        remote: true
 #        namespace: autocert
 
-      - name: oauth2-proxy-internal
-        chartPath: stable/oauth2-proxy
-        valuesFiles: [k8s/oauth2-proxy/internal-oauth2-proxy-helm-values.yaml]
-        remote: true
-        namespace: oauth2-proxy
-
-      - name: oauth2-proxy-external
-        chartPath: stable/oauth2-proxy
-        valuesFiles: [k8s/oauth2-proxy/external-oauth2-proxy-helm-values.yaml]
-        remote: true
-        namespace: oauth2-proxy
+#      - name: oauth2-proxy-internal
+#        chartPath: stable/oauth2-proxy
+#        valuesFiles: [k8s/oauth2-proxy/internal-oauth2-proxy-helm-values.yaml]
+#        remote: true
+#        namespace: oauth2-proxy
+#
+#      - name: oauth2-proxy-external
+#        chartPath: stable/oauth2-proxy
+#        valuesFiles: [k8s/oauth2-proxy/external-oauth2-proxy-helm-values.yaml]
+#        remote: true
+#        namespace: oauth2-proxy
