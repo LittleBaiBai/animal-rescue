@@ -4,12 +4,12 @@ namespace: oauth2-proxy
 secretGenerator:
 - name: oauth2-external-proxy-creds-kubedemo
   envs:
-  - secret/oauth2-external-proxy-creds-kubedemo
+  - secrets/oauth2-external-proxy-creds-kubedemo
   type: Opaque
   namespace: external-dns
 - name: oauth2-internal-proxy-creds
   envs:
-  - secret/oauth2-internal-proxy-creds
+  - secrets/oauth2-internal-proxy-creds
   type: Opaque
   namespace: external-dns
 generatorOptions:

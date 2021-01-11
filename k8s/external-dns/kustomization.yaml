@@ -6,7 +6,7 @@ secretGenerator:
 - name: cloud-dns-admin
   type: Opaque
   files:
-  - secret/gcp-dns-account-credentials.json
+  - secrets/gcp-dns-account-credentials.json
 
 generatorOptions:
   disableNameSuffixHash: true
