@@ -4,4 +4,4 @@ namespace: animal-rescue
 
 resources:
   - animal-rescue-ingress.yaml
-  - letsencrypt-staging.yaml
+#  - letsencrypt-staging.yaml

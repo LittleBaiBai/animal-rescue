@@ -142,7 +142,7 @@ Have fun rescuing!
 _Note for uninstall: you may need to fun the following command after `helm uninstall`_
 
 ```bash
-kubectl delete -A ValidatingWebhookConfiguration ingress-s1p-ingress-nginx-admission
+kubectl delete -A ValidatingWebhookConfiguration ingress-animal-rescue-ingress-nginx-admission
 ```
 
 _Note for running on GKE: I had to run the following command to enable webhook:_

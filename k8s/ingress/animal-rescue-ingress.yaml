@@ -3,17 +3,17 @@ kind: Ingress
 metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
-    cert-manager.io/cluster-issuer: "letsencrypt-staging"
-    kubernetes.io/tls-acme: "true"
+#    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+#    kubernetes.io/tls-acme: "true"
   name: animal-rescue-ingress
 spec:
-  tls:
-    - hosts:
-        - fluffy.spring.animalrescue.online
-      secretName: animal-rescue-certs
-    - hosts:
-        - partner.spring.animalrescue.online
-      secretName: partner-certs
+#  tls:
+#    - hosts:
+#        - fluffy.spring.animalrescue.online
+#      secretName: animal-rescue-certs
+#    - hosts:
+#        - partner.spring.animalrescue.online
+#      secretName: partner-certs
   rules:
     - host: fluffy.spring.animalrescue.online
       http:

@@ -27,28 +27,28 @@ deploy:
     - backend/k8s/
     - external-api/k8s/
     - k8s
-  helm:
-    flags:
-      install: [ "--create-namespace" ]
-    releases:
-      - name: ingress-animal-rescue
-        chartPath: ingress-nginx/ingress-nginx
-        remote: true
-        namespace: nginx
-        wait: true
-
-      - name: external-dns
-        chartPath: bitnami/external-dns
-        valuesFiles: [ k8s/external-dns/external-dns-helm-values.yaml ]
-        remote: true
-        namespace: external-dns
-        wait: true
-
-      - name: cert-manager
-        chartPath: jetstack/cert-manager
-        version: v1.0.0
-        setValues:
-          installCRDs: true
-        remote: true
-        namespace: cert-manager
-        wait: true
+#  helm:
+#    flags:
+#      install: [ "--create-namespace" ]
+#    releases:
+#      - name: ingress-animal-rescue
+#        chartPath: ingress-nginx/ingress-nginx
+#        remote: true
+#        namespace: nginx
+#        wait: true
+#
+#      - name: external-dns
+#        chartPath: bitnami/external-dns
+#        valuesFiles: [ k8s/external-dns/external-dns-helm-values.yaml ]
+#        remote: true
+#        namespace: external-dns
+#        wait: true
+#
+#      - name: cert-manager
+#        chartPath: jetstack/cert-manager
+#        version: v1.1.0
+#        setValues:
+#          installCRDs: true
+#        remote: true
+#        namespace: cert-manager
+#        wait: true
