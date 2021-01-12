@@ -8,7 +8,8 @@ Or you can check out the corresponding tag to get the code for different stages:
 
 - `startdemo`: starting point
 - `basicauth`: TLS + Ingress + Basic Auth
-- `oauth2`: TLS + Ingress + OAuth2 
+- `oauth2`: TLS + Ingress + OAuth2 with [Spring Cloud Gateway](https://cloud.spring.io/spring-cloud-gateway/)
+- `oauth2-proxy`: TLS + Ingress + OAuth2 with [oauth2-proxy](https://github.com/oauth2-proxy/oauth2-proxy)
 - `mTLS`: mTLS
 
 Please open an issue/PR if any of the tags or steps are inaccurate.
@@ -22,7 +23,6 @@ Have fun rescuing!
     * Add the following repos following the steps:
         ```bash
         helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx  # for nginx ingress
-        helm repo add stable https://kubernetes-charts.storage.googleapis.com   # for oauth2-proxy
         helm repo add jetstack https://charts.jetstack.io                       # for cert-manager
         helm repo add bitnami https://charts.bitnami.com/bitnami                # for external-dns
         helm repo add smallstep https://smallstep.github.io/helm-charts/        # for autocert
@@ -198,7 +198,7 @@ The record will take a few minute to propogate. Keep pinging...
     spec:
      tls:
        - hosts:
-           - spring.animalrescue.online
+           - fluffy.spring.animalrescue.online
          secretName: animal-rescue-certs
        - hosts:
            - partner.spring.animalrescue.online
@@ -220,9 +220,9 @@ kubectl get certificates
 Verify TLS:
 
 ```bash
-curl http://spring.animalrescue.online/api/animals # Should get `308 Permanent Redirect` back
-curl https://spring.animalrescue.online/api/animals -k # Should get `401` back
-curl https://spring.animalrescue.online/api/animals -k --user alice:test # Should get `200`response back
+curl http://fluffy.spring.animalrescue.online/api/animals # Should get `308 Permanent Redirect` back
+curl https://fluffy.spring.animalrescue.online/api/animals -k # Should get `401` back
+curl https://fluffy.spring.animalrescue.online/api/animals -k --user alice:test # Should get `200`response back
 ```
 
 After verified that everything works fine, switch to use prod server.
@@ -235,7 +235,16 @@ Visit the site again to see a trusted cert!
 
 ### OAuth2
 
+This talk was initially developed to use [oauth2-proxy](https://github.com/oauth2-proxy/oauth2-proxy). However, we now 
+suggest Spring Cloud Gateway as a better option because it's just another Spring Boot app. 
+
+#### Securing HTTP with Spring Cloud Gateway with any OIDC provider
+
+[TBA][TAG: oauth2]
+
 #### Securing HTTP with oauth2-proxy with GitHub
+
+_All the related sample code can be found on_ tag `oauth2-proxy` 
 
 1. Create an OAuth application in the GitHub website (or another OAuth provider such as google if you prefer but you will need to change the settings in `k8s/oauth2-proxy/external-oauth2-proxy-helm-values.yaml`) 
    See the [GitHub guide for setting up an OAuth application](https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/)
@@ -259,7 +268,6 @@ You will need to modify the configuration in `k8s/oauth2-proxy/internal-oauth2-p
 change `oidc-issuer-url` to point at your own service. The create an OAuth Client and add the client id and secret to the file 
 `k8s/oauth2-proxy/secrets/oauth2-internal-proxy-creds`.
 
-Then accessing 
 
 #### Install both oauth2-proxy and use them with ingress
 

@@ -31,7 +31,7 @@ deploy:
     flags:
       install: [ "--create-namespace" ]
     releases:
-      - name: ingress-s1p
+      - name: ingress-animal-rescue
         chartPath: ingress-nginx/ingress-nginx
         remote: true
         namespace: nginx
@@ -52,20 +52,3 @@ deploy:
         remote: true
         namespace: cert-manager
         wait: true
-
-#      - name: autocert
-#        chartPath: smallstep/autocert
-#        remote: true
-#        namespace: autocert
-
-#      - name: oauth2-proxy-internal
-#        chartPath: stable/oauth2-proxy
-#        valuesFiles: [k8s/oauth2-proxy/internal-oauth2-proxy-helm-values.yaml]
-#        remote: true
-#        namespace: oauth2-proxy
-#
-#      - name: oauth2-proxy-external
-#        chartPath: stable/oauth2-proxy
-#        valuesFiles: [k8s/oauth2-proxy/external-oauth2-proxy-helm-values.yaml]
-#        remote: true
-#        namespace: oauth2-proxy

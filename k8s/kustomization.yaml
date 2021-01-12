@@ -3,5 +3,4 @@ kind: Kustomization
 resources:
 - ingress
 - external-dns
-#- oauth2-proxy
 
