@@ -15,7 +15,7 @@ build:
   - image: springcloudservices/animal-rescue-partner
     context: external-api
     buildpacks:
-      builder: gcr.io/paketo-buildpacks/builder:base-platform-api-latest
+      builder: gcr.io/paketo-buildpacks/builder:base
       dependencies:
         paths:
         - .

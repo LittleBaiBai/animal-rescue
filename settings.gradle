@@ -5,5 +5,4 @@ pluginManagement {
 }
 
 include "backend"
-include "e2e"
 include "frontend"

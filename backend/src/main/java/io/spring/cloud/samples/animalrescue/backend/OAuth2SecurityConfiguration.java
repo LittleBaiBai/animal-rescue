@@ -5,8 +5,6 @@ import java.util.Collection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnCloudPlatform;
-import org.springframework.boot.cloud.CloudPlatform;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -19,7 +17,6 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-import io.pivotal.cfenv.core.CfEnv;
 
 @Configuration
 @Profile("oauth2")
@@ -27,9 +24,18 @@ public class OAuth2SecurityConfiguration {
 
 	private static final Logger LOG = LoggerFactory.getLogger(OAuth2SecurityConfiguration.class);
 
-	static private class UserNameJwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
+	@Bean
+	public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity httpSecurity) {
+		httpSecurity.oauth2ResourceServer()
+		            .jwt()
+					.jwtAuthenticationConverter(new ReactiveJwtAuthenticationConverterAdapter(new UserNameJwtAuthenticationConverter()));
 
-		private Converter<Jwt, Collection<GrantedAuthority>> jwtGrantedAuthoritiesConverter
+		return httpSecurity.build();
+	}
+
+	private static class UserNameJwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
+
+		private final Converter<Jwt, Collection<GrantedAuthority>> jwtGrantedAuthoritiesConverter
 			= new JwtGrantedAuthoritiesConverter();
 
 		@Override
