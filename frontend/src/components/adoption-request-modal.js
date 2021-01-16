@@ -44,12 +44,14 @@ export default class AdoptionRequestModal extends React.Component {
         try {
             if (this.props.existingRequest === undefined) {
                 await submitAdoptionRequest({
+                    username: this.props.username,
                     animalId: this.props.animal.id,
                     email: this.state.email,
                     notes: this.state.notes,
                 });
             } else {
                 await editAdoptionRequest({
+                    username: this.props.username,
                     animalId: this.props.animal.id,
                     adoptionRequestId: this.props.existingRequest.id,
                     email: this.state.email,
@@ -154,5 +156,6 @@ AdoptionRequestModal.propTypes = {
         notes: PropTypes.string,
     }),
     isSignedIn: PropTypes.bool.isRequired,
+    username: PropTypes.string.isRequired,
 };
 

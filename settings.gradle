@@ -6,3 +6,4 @@ pluginManagement {
 
 include "backend"
 include "frontend"
+include "oauth2-gateway"

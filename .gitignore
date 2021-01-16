@@ -9,5 +9,4 @@
 out/
 scripts/out/
 **/secrets/
-
-oauth2-gateway/
+**/build/

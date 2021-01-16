@@ -36,6 +36,7 @@ export default class AnimalCard extends React.Component {
                     <div className='ui two buttons'>
                         <AdoptionRequestModal animal={this.props.animal}
                                               existingRequest={this.findExistingRequest()}
+                                              username={this.props.username}
                                               isSignedIn={this.props.username !== ''}
                          />
                     </div>

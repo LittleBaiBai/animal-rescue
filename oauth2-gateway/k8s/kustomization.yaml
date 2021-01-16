@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: oauth2
+
+secretGenerator:
+- name: oauth2-credentials
+  envs:
+  - secrets/oauth2-credentials.txt
+  type: Opaque
+
+configMapGenerator:
+- name: application-configmap
+  files:
+  - application.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+resources:
+- namespace.yaml
+- deployment.yaml
+- service.yaml
+- gateway-ingress.yaml

@@ -1,0 +1,55 @@
+spring:
+  cloud:
+    gateway:
+      enabled: true
+      routes:
+      - id: frontend
+        uri: http://animal-rescue.animal-rescue
+        predicates:
+        - Path=/**
+        order: 1000
+      - id: backend-animals
+        uri: http://animal-rescue.animal-rescue
+        predicates:
+          - Path=/api/animals
+      - id: backend-auth
+        uri: http://animal-rescue.animal-rescue
+        predicates:
+        - Path=/api/**
+        filters:
+        - OAuth2Login
+  security:
+    oauth2:
+      client:
+        registration:
+          auth0:
+            provider: auth0
+            authorization-grant-type: authorization_code
+            client-id: sample-client-id
+            client-secret: sample-client-secret
+            scope:
+              - openid
+              - profile
+              - email
+        provider:
+          auth0:
+            issuer-uri: https://dev-nexus-demo.us.auth0.com/
+      resourceserver:
+        jwt:
+          issuer-uri: https://dev-nexus-demo.us.auth0.com/
+
+management:
+  endpoint:
+    health:
+      show-details: when-authorized
+    gateway:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+logging:
+  level:
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.cloud: DEBUG

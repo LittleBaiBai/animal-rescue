@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth2-gateway
+  labels:
+    app: oauth2-gateway
+spec:
+  selector:
+    matchLabels:
+      app: oauth2-gateway
+  replicas: 1
+  template:
+    metadata:
+      name: oauth2-gateway
+      labels:
+        app: oauth2-gateway
+    spec:
+      containers:
+      - name: oauth2-gateway
+        image: springcloudservices/oauth2-gateway-k8s
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 8080
+        env:
+        - name: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_AUTH0_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-credentials
+              key: client-id
+        - name: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_AUTH0_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-credentials
+              key: client-secret
+        - name: SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_AUTH0_ISSUER_URI
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-credentials
+              key: issuer-uri
+        - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-credentials
+              key: issuer-uri
+        - name: SPRING_CONFIG_LOCATION
+          value: /config/rescue/application.yaml
+
+        volumeMounts:
+        - name: application-config-volume
+          mountPath: /config/rescue/
+      volumes:
+      - name: "application-config-volume"
+        configMap:
+          name: "application-configmap"

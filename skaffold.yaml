@@ -21,11 +21,20 @@ build:
         - .
         ignore:
         - node_modules
+  - image: springcloudservices/oauth2-gateway-k8s
+    context: oauth2-gateway
+    buildpacks:
+      builder: gcr.io/paketo-buildpacks/builder:base
+      dependencies:
+        paths:
+        - src
+        - build.gradle
 deploy:
   kustomize:
     paths:
     - backend/k8s/
     - external-api/k8s/
+    - oauth2-gateway/k8s/
     - k8s
   helm:
     flags:
@@ -42,11 +51,10 @@ deploy:
         valuesFiles: [ k8s/external-dns/external-dns-helm-values.yaml ]
         remote: true
         namespace: external-dns
-        wait: true
 
       - name: cert-manager
         chartPath: jetstack/cert-manager
-        version: v1.0.0
+        version: v1.1.0
         setValues:
           installCRDs: true
         remote: true

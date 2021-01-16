@@ -3,5 +3,6 @@ kind: Kustomization
 namespace: animal-rescue
 
 resources:
-  - animal-rescue-ingress.yaml
+#  - animal-rescue-ingress.yaml
   - letsencrypt-staging.yaml
+#  - letsencrypt-prod.yaml

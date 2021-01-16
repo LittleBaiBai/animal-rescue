@@ -39,11 +39,6 @@ spec:
         env:
           - name: SPRING_CONFIG_LOCATION
             value: /config/rescue/application.yaml
-#          # TODO: Add the following envs for oauth2
-#          - name: SPRING_PROFILES_ACTIVE
-#            value: oauth2
-#          - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
-#            value:
       volumes:
         - name: "application-config-volume"
           configMap:

@@ -8,7 +8,7 @@ Or you can check out the corresponding tag to get the code for different stages:
 
 - `startdemo`: starting point
 - `basicauth`: TLS + Ingress + Basic Auth
-- `oauth2`: TLS + Ingress + OAuth2 with [Spring Cloud Gateway](https://cloud.spring.io/spring-cloud-gateway/)
+- `oauth2-gateway`: TLS + Ingress + OAuth2 with [Spring Cloud Gateway](https://cloud.spring.io/spring-cloud-gateway/)
 - `oauth2-proxy`: TLS + Ingress + OAuth2 with [oauth2-proxy](https://github.com/oauth2-proxy/oauth2-proxy)
 - `mTLS`: mTLS
 
@@ -42,6 +42,8 @@ Have fun rescuing!
 * The guide assume you have `skaffold dev` running to apply changes. You can also run `skaffold run` with each step.
 
 ## Basic Auth on API
+
+_All the related sample code can be found on_ tag `basicauth` 
 
 ### Manual basic auth
 
@@ -142,7 +144,7 @@ Have fun rescuing!
 _Note for uninstall: you may need to fun the following command after `helm uninstall`_
 
 ```bash
-kubectl delete -A ValidatingWebhookConfiguration ingress-s1p-ingress-nginx-admission
+kubectl delete -A ValidatingWebhookConfiguration ingress-animal-rescue-ingress-nginx-admission
 ```
 
 _Note for running on GKE: I had to run the following command to enable webhook:_
@@ -153,7 +155,7 @@ kubectl create clusterrolebinding cluster-admin-binding \
   --user $(gcloud config get-value account)
 ```
 
-### ExternalDNS
+## ExternalDNS
 
 [Helm install](https://github.com/bitnami/charts/tree/master/bitnami/external-dns)
 
@@ -183,7 +185,7 @@ stern external -n external-dns
 
 The record will take a few minute to propogate. Keep pinging...
 
-### TLS
+## TLS
 
 1. Uncomment the cert-manager release in `deploy/helm/releases` section in [skaffold.yaml](./skaffold.yaml)
 1. Include `letsencrypt-staging.yaml` in [ingress kustomization](./k8s/ingress/kustomization.yaml)
@@ -233,16 +235,30 @@ After verified that everything works fine, switch to use prod server.
 
 Visit the site again to see a trusted cert!
 
-### OAuth2
+## OAuth2
 
 This talk was initially developed to use [oauth2-proxy](https://github.com/oauth2-proxy/oauth2-proxy). However, we now 
 suggest Spring Cloud Gateway as a better option because it's just another Spring Boot app. 
 
-#### Securing HTTP with Spring Cloud Gateway with any OIDC provider
+### Securing HTTP with Spring Cloud Gateway with any OIDC provider
 
-[TBA][TAG: oauth2]
+_All the related sample code can be found on_ tag `oauth2-gateway` 
 
-#### Securing HTTP with oauth2-proxy with GitHub
+1. Create an OAuth2 App with [Auth0](https://auth0.com/docs/quickstarts/)
+1. When creating the OAuth App with Auth0, make sure the Allowed Callback URLs include your own domain eg: `https://gateway.spring.animalrescue.online/login/oauth2/code/auth0`
+1. Create the file `oauth2-gateway/k8s/secrets/oauth2-credentials.txt`, using the structure below:
+
+```shell
+client-id=${your-client-id}
+client-secret=${your-client-secret}
+issuer-uri=https://dev-nexus-demo.us.auth0.com/
+```
+
+1. Change the gateway ingress to use your domain: `oauth2-gateway/k8s/gateway-ingress.yaml`
+
+`skaffold run` should deploy gateway, create ingress for it and enable TLS, creating DNS record with ExternalDNS. Then you can access the gateway url to find animal-rescue fully functional: `https://gateway.spring.animalrescue.online` 
+
+### Securing HTTP with oauth2-proxy with GitHub
 
 _All the related sample code can be found on_ tag `oauth2-proxy` 
 
@@ -268,7 +284,6 @@ You will need to modify the configuration in `k8s/oauth2-proxy/internal-oauth2-p
 change `oidc-issuer-url` to point at your own service. The create an OAuth Client and add the client id and secret to the file 
 `k8s/oauth2-proxy/secrets/oauth2-internal-proxy-creds`.
 
-
 #### Install both oauth2-proxy and use them with ingress
 
 1. Include `oauth2-proxy` in [k8s/kustomization](k8s/kustomization.yaml) 
@@ -277,7 +292,7 @@ change `oidc-issuer-url` to point at your own service. The create an OAuth Clien
 1. Open a browser to `yourdomain.com` and you should be presented with a GitHub authorization page and redirected to the animal-rescue site
 1. Accessing any actuator endpoint `yourdomain.com/actuator/*` and you should be redirected to your choice of internal auth provider for authentication then redirected to the actuator endpoint.
 
-### mTLS with Autocert
+## mTLS with Autocert
 
 [Doc](https://github.com/smallstep/autocert)
 
@@ -353,6 +368,6 @@ change `oidc-issuer-url` to point at your own service. The create an OAuth Clien
     # Should fail on client cert validation
     ```
 
-### Google DNS setup 
+## Google DNS setup 
 The kNative project has a good guide for setting up external DNS with Google Cloud that you can follow in order to get a K8s cluster up and running 
 [https://knative.dev/v0.15-docs/serving/using-external-dns-on-gcp/#set-up-kubernetes-engine-cluster-with-clouddns-readwrite-permissions]()

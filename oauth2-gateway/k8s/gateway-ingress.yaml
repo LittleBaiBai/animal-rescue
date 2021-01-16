@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+    kubernetes.io/tls-acme: "true"
+  name: gateway-ingress
+spec:
+  tls:
+    - hosts:
+        - gateway.spring.animalrescue.online
+      secretName: gateway-certs
+  rules:
+    - host: gateway.spring.animalrescue.online
+      http:
+        paths:
+          - backend:
+              serviceName: oauth2-gateway
+              servicePort: 80
+

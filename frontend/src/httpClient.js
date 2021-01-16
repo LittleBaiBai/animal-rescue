@@ -8,13 +8,13 @@ export async function getAnimals() {
         .then(res => res.data);
 }
 
-export async function submitAdoptionRequest({animalId, email, notes}) {
-    return axios.post(`${backendBaseUrl}/animals/${animalId}/adoption-requests`, {email, notes});
+export async function submitAdoptionRequest({animalId, email, notes, username}) {
+    return axios.post(`${backendBaseUrl}/animals/${animalId}/adoption-requests`, {adopterName: username, email, notes});
 }
 
-export async function editAdoptionRequest({animalId, adoptionRequestId, email, notes}) {
+export async function editAdoptionRequest({animalId, adoptionRequestId, email, notes, username}) {
     return axios.put(`${backendBaseUrl}/animals/${animalId}/adoption-requests/${adoptionRequestId}`,
-        {email, notes});
+        {adopterName: username, email, notes});
 }
 
 export async function deleteAdoptionRequest({animalId, adoptionRequestId}) {
@@ -23,7 +23,7 @@ export async function deleteAdoptionRequest({animalId, adoptionRequestId}) {
 
 export async function getUsername() {
     return axios
-        .get(`${backendBaseUrl}/whoami`)
+        .get(`/whoami`)
         .then(res => {
             if (res.request.responseURL && !res.request.responseURL.endsWith('whoami')) {
                 return '';
