@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,24 +48,21 @@ public class AnimalController {
 	@PostMapping("/animals/{id}/adoption-requests")
 	@ResponseStatus(HttpStatus.CREATED)
 	public void submitAdoptionRequest(
-		Principal principal,
 		@PathVariable("id") Long animalId,
 		@RequestBody AdoptionRequest adoptionRequest
 	) {
-		LOGGER.info("Received submit adoption request from {}", principal.getName());
+		LOGGER.info("Received submit adoption request from {}", adoptionRequest.getAdopterName());
 		Animal animal = animalRepository
 			.findById(animalId)
 			.orElseThrow(() ->
 				new IllegalArgumentException(String.format("Animal with id %s doesn't exist!", animalId)));
 
-		adoptionRequest.setAdopterName(principal.getName());
 		animal.getAdoptionRequests().add(adoptionRequest);
 		animalRepository.save(animal);
 	}
 
 	@PutMapping("/animals/{animalId}/adoption-requests/{adoptionRequestId}")
 	public void editAdoptionRequest(
-		Principal principal,
 		@PathVariable("animalId") Long animalId,
 		@PathVariable("adoptionRequestId") Long adoptionRequestId,
 		@RequestBody AdoptionRequest adoptionRequest
@@ -87,9 +83,9 @@ public class AnimalController {
 					adoptionRequestId)));
 
 
-		if (!existing.getAdopterName().equals(principal.getName())) {
-			throw new AccessDeniedException(String.format("User %s has cannot edit user %s's adoption request",
-				principal.getName(), existing.getAdopterName()));
+		if (!existing.getAdopterName().equals(adoptionRequest.getAdopterName())) {
+			throw new IllegalArgumentException(String.format("User %s has cannot edit user %s's adoption request",
+				adoptionRequest.getAdopterName(), existing.getAdopterName()));
 		}
 
 		existing.setEmail(adoptionRequest.getEmail());
@@ -100,11 +96,9 @@ public class AnimalController {
 
 	@DeleteMapping("/animals/{animalId}/adoption-requests/{adoptionRequestId}")
 	public void deleteAdoptionRequest(
-		Principal principal,
 		@PathVariable("animalId") Long animalId,
 		@PathVariable("adoptionRequestId") Long adoptionRequestId
 	) {
-		LOGGER.info("Received delete adoption request from {}", principal.getName());
 		Animal animal = animalRepository
 			.findById(animalId)
 			.orElseThrow(() ->
@@ -119,18 +113,8 @@ public class AnimalController {
 				() -> new IllegalArgumentException(String.format("AdoptionRequest with id %s doesn't exist!",
 					adoptionRequestId)));
 
-		if (!existing.getAdopterName().equals(principal.getName())) {
-			throw new AccessDeniedException(String.format("User %s has cannot delete user %s's adoption request",
-				principal.getName(), existing.getAdopterName()));
-		}
-
 		animal.getAdoptionRequests().remove(existing);
 		animalRepository.save(animal);
-	}
-
-	@ExceptionHandler({AccessDeniedException.class})
-	public ResponseEntity<String> handleAccessDeniedException(Exception e) {
-		return new ResponseEntity<>(e.getMessage(), new HttpHeaders(), HttpStatus.FORBIDDEN);
 	}
 
 	@ExceptionHandler({IllegalArgumentException.class})
